@@ -1,1 +1,37 @@
-.
+# ==============================================================
+# HIJO RESOURCE CORPORATION - CRYPTOGRAPHIC IDENTITY BLUEPRINT
+# ==============================================================
+
+OrderersOrgs:
+  - Name: HijoOrderOrg
+    Domain: hijo.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer1
+      - Hostname: orderer2
+      - Hostname: orderer3
+
+PeerOrgs:
+  - Name: HijoAgriOrg
+    Domain: agri.hijo.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1
+
+  - Name: HijoLogisticsOrg
+    Domain: logistics.hijo.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1
+
+  - Name: HijoPortOrg
+    Domain: port.hijo.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+    Users:
+      Count: 1
