@@ -1,1 +1,14 @@
+# Ignore auto-generated simulation PKI certificates and channel artifacts
+crypto-config/
+channel-artifacts/
+
+# Ignore built binaries and package archives
+*.tar.gz
+chaincode/banana_tracking/banana_tracking
+
+# Ignore Go vendored dependencies
+chaincode/banana_tracking/vendor/
+
+# Environment / IDE files
 .freebuff/
+.DS_Store
