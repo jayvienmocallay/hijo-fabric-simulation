@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hijo Resource Corporation - Fabric v2.5 Blockchain Explorer & Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Header -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="logo-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+        <div class="brand-text">
+          <h1>HIJO RESOURCE CORP</h1>
+          <span>Fabric v2.5 Supply Chain Blockchain</span>
+        </div>
+      </div>
+      <div class="network-badge">
+        <span class="pulse-dot"></span>
+        <span>CHANNEL: <strong>hijosupplychain</strong></span>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Network Nodes Health Dashboard -->
+      <section class="section-card">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-server"></i> Network Node Health Monitor</h2>
+          <span class="badge badge-success">11 Nodes Operational</span>
+        </div>
+
+        <div class="nodes-grid">
+          <!-- Orderer Cluster -->
+          <div class="node-card orderer">
+            <div class="node-card-header">
+              <div class="node-title-group">
+                <span class="node-icon"><i class="fa-solid fa-building-columns"></i></span>
+                <div>
+                  <h3>Orderer Cluster</h3>
+                  <p>Raft 3-Node Consensus</p>
+                </div>
+              </div>
+              <button class="cert-link-btn" onclick="openCertModal('orderer')"><i class="fa-solid fa-certificate"></i> Cert</button>
+            </div>
+            <div class="node-ports">
+              <span class="tag">orderer1:7050</span>
+              <span class="tag">orderer2:8050</span>
+              <span class="tag">orderer3:9050</span>
+            </div>
+          </div>
+
+          <!-- Agri Peer -->
+          <div class="node-card peer">
+            <div class="node-card-header">
+              <div class="node-title-group">
+                <span class="node-icon"><i class="fa-solid fa-seedling"></i></span>
+                <div>
+                  <h3>peer0.agri.hijo.com</h3>
+                  <p>Hijo Agriculture MSP</p>
+                </div>
+              </div>
+              <div class="action-links">
+                <button class="cert-link-btn" onclick="openCertModal('agri')"><i class="fa-solid fa-certificate"></i> Cert</button>
+                <a href="http://localhost:5984/_utils" target="_blank" class="couch-link">Fauxton DB <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+              </div>
+            </div>
+            <div class="node-ports">
+              <span class="tag">Port 7051</span>
+              <span class="tag">CouchDB 5984</span>
+            </div>
+          </div>
+
+          <!-- Logistics Peer -->
+          <div class="node-card peer">
+            <div class="node-card-header">
+              <div class="node-title-group">
+                <span class="node-icon"><i class="fa-solid fa-truck-ramp-box"></i></span>
+                <div>
+                  <h3>peer0.logistics.hijo.com</h3>
+                  <p>Hijo Logistics MSP</p>
+                </div>
+              </div>
+              <div class="action-links">
+                <button class="cert-link-btn" onclick="openCertModal('logistics')"><i class="fa-solid fa-certificate"></i> Cert</button>
+                <a href="http://localhost:5985/_utils" target="_blank" class="couch-link">Fauxton DB <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+              </div>
+            </div>
+            <div class="node-ports">
+              <span class="tag">Port 8051</span>
+              <span class="tag">CouchDB 5985</span>
+            </div>
+          </div>
+
+          <!-- Port Peer -->
+          <div class="node-card peer">
+            <div class="node-card-header">
+              <div class="node-title-group">
+                <span class="node-icon"><i class="fa-solid fa-anchor"></i></span>
+                <div>
+                  <h3>peer0.port.hijo.com</h3>
+                  <p>Hijo Port MSP</p>
+                </div>
+              </div>
+              <div class="action-links">
+                <button class="cert-link-btn" onclick="openCertModal('port')"><i class="fa-solid fa-certificate"></i> Cert</button>
+                <a href="http://localhost:5986/_utils" target="_blank" class="couch-link">Fauxton DB <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+              </div>
+            </div>
+            <div class="node-ports">
+              <span class="tag">Port 9051</span>
+              <span class="tag">CouchDB 5986</span>
+            </div>
+          </div>
+
+          <!-- CCAAS Chaincode Server -->
+          <div class="node-card chaincode">
+            <div class="node-card-header">
+              <div class="node-title-group">
+                <span class="node-icon"><i class="fa-solid fa-microchip"></i></span>
+                <div>
+                  <h3>banana_tracking_1.0</h3>
+                  <p>CCAAS Container Server</p>
+                </div>
+              </div>
+              <span class="status-pill active">ONLINE</span>
+            </div>
+            <div class="node-ports">
+              <span class="tag">Server 0.0.0.0:9999</span>
+              <span class="tag">Go 1.20</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Supply Chain Batch Tracking Section -->
+      <div class="two-column-layout">
+        
+        <!-- Batch State Inspector -->
+        <section class="section-card flex-1">
+          <div class="section-header">
+            <h2><i class="fa-solid fa-box-archive"></i> Live Banana Batch Inspector</h2>
+            <button class="btn btn-secondary" onclick="loadSampleData()"><i class="fa-solid fa-arrows-rotate"></i> Refresh State</button>
+          </div>
+
+          <div class="batch-selector">
+            <label for="batchSelect">Select Active Batch:</label>
+            <select id="batchSelect" onchange="renderSelectedBatch()">
+              <option value="BATCH101">BATCH101 - Tagum Farm 4 (Cold Storage)</option>
+              <option value="BATCH102">BATCH102 - Davao Farm 2 (Harvested)</option>
+              <option value="BATCH103">BATCH103 - Carmen Plantation (Vessel Loaded)</option>
+            </select>
+          </div>
+
+          <!-- Visual Supply Chain Pipeline Progress -->
+          <div class="pipeline-container">
+            <div class="step" id="step-farm">
+              <div class="step-icon"><i class="fa-solid fa-wheat-awn"></i></div>
+              <div class="step-title">Harvest & Pack</div>
+              <div class="step-sub" id="sub-farm">Tagum Farm</div>
+            </div>
+            <div class="pipeline-line"></div>
+            <div class="step" id="step-logistics">
+              <div class="step-icon"><i class="fa-solid fa-snowflake"></i></div>
+              <div class="step-title">Refrigerated Transit</div>
+              <div class="step-sub" id="sub-logistics">Cold Truck</div>
+            </div>
+            <div class="pipeline-line"></div>
+            <div class="step" id="step-port">
+              <div class="step-icon"><i class="fa-solid fa-ship"></i></div>
+              <div class="step-title">Port Customs & Export</div>
+              <div class="step-sub" id="sub-port">Vessel Berth</div>
+            </div>
+          </div>
+
+          <!-- Asset JSON Viewer -->
+          <div class="json-container">
+            <div class="json-header">
+              <span>WORLD STATE LEDGER PAYLOAD (CouchDB)</span>
+              <span class="badge badge-info" id="currentTxStatus">VALIDATED & COMMITTED</span>
+            </div>
+            <pre id="jsonViewer"><code>Loading asset state...</code></pre>
+          </div>
+        </section>
+
+        <!-- Transaction Simulation Controller -->
+        <section class="section-card flex-1">
+          <div class="section-header">
+            <h2><i class="fa-solid fa-sliders"></i> Blockchain Transaction Simulator</h2>
+          </div>
+
+          <form id="txForm" onsubmit="handleTransaction(event)">
+            <div class="form-group">
+              <label for="txAction">Chaincode Function:</label>
+              <select id="txAction" onchange="updateFormFields()">
+                <option value="CreateBatch">CreateBatch (Agri Org)</option>
+                <option value="UpdateTransportTelemetry">UpdateTransportTelemetry (Logistics Org)</option>
+                <option value="ClearForExport">ClearForExport (Port Org)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="inputBatchId">Batch UID:</label>
+              <input type="text" id="inputBatchId" value="BATCH104" required>
+            </div>
+
+            <div id="dynamicFields">
+              <!-- Dynamically populated by JS -->
+            </div>
+
+            <div class="form-group">
+              <label for="inputUid">Signing Operator UID:</label>
+              <input type="text" id="inputUid" value="EMP-AGRI-001" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Submit Endorsement to Fabric</button>
+          </form>
+
+          <div class="console-box" id="consoleBox">
+            <div class="console-title">SYSTEM EVENT LOG</div>
+            <div class="console-output" id="consoleOutput">
+              [SYSTEM] Fabric v2.5 Network connected on channel 'hijosupplychain'.<br>
+              [SHIM] Endorsement policy: 3/3 Orgs (Agri, Logistics, Port) required.
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Live Container Logs Dashboard Section -->
+      <section class="section-card">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-terminal"></i> Live Container Log Dashboard</h2>
+          <div class="log-controls">
+            <label for="logNodeSelect">Container Node:</label>
+            <select id="logNodeSelect" onchange="fetchLiveLogs()">
+              <option value="peer0.agri.hijo.com">peer0.agri.hijo.com (Agri Peer)</option>
+              <option value="peer0.logistics.hijo.com">peer0.logistics.hijo.com (Logistics Peer)</option>
+              <option value="peer0.port.hijo.com">peer0.port.hijo.com (Port Peer)</option>
+              <option value="orderer1.hijo.com">orderer1.hijo.com (Raft Orderer 1)</option>
+              <option value="orderer2.hijo.com">orderer2.hijo.com (Raft Orderer 2)</option>
+              <option value="orderer3.hijo.com">orderer3.hijo.com (Raft Orderer 3)</option>
+              <option value="chaincode.banana.tracking">chaincode.banana.tracking (CCAAS Server)</option>
+              <option value="couchdb.agri">couchdb.agri (Agri State DB)</option>
+            </select>
+            <button class="btn btn-secondary" id="autoRefreshBtn" onclick="toggleAutoRefresh()"><i class="fa-solid fa-sync"></i> Auto Refresh: ON</button>
+          </div>
+        </div>
+
+        <div class="log-terminal-container">
+          <div class="log-terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title" id="terminalTitle">DOCKER LOG STREAM — peer0.agri.hijo.com</span>
+          </div>
+          <pre id="logTerminal"><code>Connecting to docker log stream...</code></pre>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Digital Identity Certificate Inspector Modal -->
+  <div id="certModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-id-card"></i> X.509 Digital Identity Certificate Inspector</h3>
+        <button class="modal-close" onclick="closeCertModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="cert-meta">
+          <span class="tag" id="certOrgTag">ORGANIZATION: Agri MSP</span>
+          <span class="tag" id="certPathTag">crypto-config/.../cert.pem</span>
+        </div>
+        <div class="cert-viewer-section">
+          <h4>Parsed Certificate Details (OpenSSL x509):</h4>
+          <pre id="certText">Loading certificate details...</pre>
+        </div>
+        <div class="cert-viewer-section">
+          <h4>Raw PEM String:</h4>
+          <pre id="certPem">Loading raw PEM...</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
