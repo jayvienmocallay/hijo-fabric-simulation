@@ -16,17 +16,25 @@ Organizations:
         Rule: "OR('HijoOrdererMSP.member')"
       Admins:
         Type: Signature
-        Rule: "OR('HijoOrdererMSP.member')"
+        Rule: "OR('HijoOrdererMSP.admin')"
 
   - &HijoAgriOrg
     Name: HijoAgriMSP
     ID: HijoAgriMSP
     MSPDir: ../crypto-config/peerOrganizations/agri.hijo.com/msp
     Policies:
-      Readers:  { Type: Signature, Rule: "OR('HijoAgriMSP.admin', 'HijoAgriMSP.peer', 'HijoAgriMSP.client')"  }
-      Writers:  { Type: Signature, Rule: "OR('HijoAgriMSP.admin', 'HijoAgriMSP.client')"  }
-      Admins:   { Type: Signature, Rule: "OR('HijoAgriMSP.admin')"  }
-      Endorsement:  { Type: Signature, Rule: "OR('HijoAgriMSP.peer')" }
+      Readers:
+        {
+          Type: Signature,
+          Rule: "OR('HijoAgriMSP.admin', 'HijoAgriMSP.peer', 'HijoAgriMSP.client')",
+        }
+      Writers:
+        {
+          Type: Signature,
+          Rule: "OR('HijoAgriMSP.admin', 'HijoAgriMSP.client')",
+        }
+      Admins: { Type: Signature, Rule: "OR('HijoAgriMSP.admin')" }
+      Endorsement: { Type: Signature, Rule: "OR('HijoAgriMSP.peer')" }
     AnchorPeers:
       - Host: peer0.agri.hijo.com
         Port: 7051
@@ -36,10 +44,18 @@ Organizations:
     ID: HijoLogisticsMSP
     MSPDir: ../crypto-config/peerOrganizations/logistics.hijo.com/msp
     Policies:
-      Readers:  { Type: Signature, Rule: "OR('HijoLogisticsMSP.admin', 'HijoLogisticsMSP.peer', HijoLogisticsMSP.client)" }
-      Writers:  { Type: Signature, Rule: "OR('HijoLogisticsMSP.admin', 'HijoLogisticsMSP.client')"  }
-      Admins:   { Type: Signature, Rule: "OR('HijoLogisticsMSP.admin')" }
-      Endorsement:  { Type: Signature, Rule: "OR('HijoLogisticsMSP.peer')"  }
+      Readers:
+        {
+          Type: Signature,
+          Rule: "OR('HijoLogisticsMSP.admin', 'HijoLogisticsMSP.peer', 'HijoLogisticsMSP.client')",
+        }
+      Writers:
+        {
+          Type: Signature,
+          Rule: "OR('HijoLogisticsMSP.admin', 'HijoLogisticsMSP.client')",
+        }
+      Admins: { Type: Signature, Rule: "OR('HijoLogisticsMSP.admin')" }
+      Endorsement: { Type: Signature, Rule: "OR('HijoLogisticsMSP.peer')" }
     AnchorPeers:
       - Host: peer0.logistics.hijo.com
         Port: 8051
@@ -49,16 +65,24 @@ Organizations:
     ID: HijoPortMSP
     MSPDir: ../crypto-config/peerOrganizations/port.hijo.com/msp
     Policies:
-      Readers:  { Type: Signature, Rule: "OR('HijoPortMSP.admin', 'HijoPortMSP.peer', 'HijoPortMSP.client')"  }
-      Writers:  { Type: Signature, Rule: "OR('HijoPortMSP.admin', 'HijoPortMSP.client')"  }
-      Admins:   { Type: Signature, Rule: "OR('HijoPortMSP.admin')"  }
-      Endorsement:  { Type: Signature, Rule: "OR('HijoPortMSP.peer')" }
+      Readers:
+        {
+          Type: Signature,
+          Rule: "OR('HijoPortMSP.admin', 'HijoPortMSP.peer', 'HijoPortMSP.client')",
+        }
+      Writers:
+        {
+          Type: Signature,
+          Rule: "OR('HijoPortMSP.admin', 'HijoPortMSP.client')",
+        }
+      Admins: { Type: Signature, Rule: "OR('HijoPortMSP.admin')" }
+      Endorsement: { Type: Signature, Rule: "OR('HijoPortMSP.peer')" }
     AnchorPeers:
       - Host: peer0.port.hijo.com
         Port: 9051
 
 Capabilities:
-  Channel: &ChannelCapabilites
+  Channel: &ChannelCapabilities
     V2_0: true
   Orderer: &OrdererCapabilities
     V2_0: true
@@ -68,52 +92,51 @@ Capabilities:
 Application: &ApplicationDefaults
   Organizations:
   Policies:
-    LifecycleEndorsement: { Type: ImplicitMeta, Rule: "MAJORITY Endorsement"  }
-    Endorsement:          { Type: ImplicitMeta, Rule: "MAJORITY Endorsement"  }
-    Read:                 { Type: ImplicitMeta, Rule: "ANY Readers"  }
-    Write:                { Type: ImplicitMeta, Rule: "ANY Writers"  }
-    Adnmin:               { Type: ImplicitMeta, Rule: "MAJORITY Admin"  }
+    LifecycleEndorsement: { Type: ImplicitMeta, Rule: "MAJORITY Endorsement" }
+    Endorsement: { Type: ImplicitMeta, Rule: "MAJORITY Endorsement" }
+    Readers: { Type: ImplicitMeta, Rule: "ANY Readers" }
+    Writers: { Type: ImplicitMeta, Rule: "ANY Writers" }
+    Admins: { Type: ImplicitMeta, Rule: "MAJORITY Admin" }
   Capabilities:
     <<: *ApplicationCapabilities
 
-Orderer: &OrderDefaults
+Orderer: &OrdererDefaults
   OrdererType: etcdraft
-  Address:
+  Addresses:
     - orderer1.hijo.com:7050
     - orderer2.hijo.com:8050
     - orderer3.hijo.com:9050
-  EtcDraft:
+  EtcdRaft:
     Consenters:
       - Host: orderer1.hijo.com
         Port: 7050
         ClientTLSCert: ../crypto-config/ordererOrganizations/hijo.com/orderers/orderer1.hijo.com/tls/server.crt
-        ServerTlSCert: ../crypto-config/ordererOrganizations/hijo.com/orderers/orderer1.hijo.com/tls/server.crt
+        ServerTLSCert: ../crypto-config/ordererOrganizations/hijo.com/orderers/orderer1.hijo.com/tls/server.crt
       - Host: orderer2.hijo.com
         Port: 8050
         ClientTLSCert: ../crypto-config/ordererOrganizations/hijo.com/orderers/orderer2.hijo.com/tls/server.crt
-        ServerTlSCert: ../crypto-config/ordererOrganizations/hijo.com/orderers/orderer2.hijo.com/tls/server.crt
+        ServerTLSCert: ../crypto-config/ordererOrganizations/hijo.com/orderers/orderer2.hijo.com/tls/server.crt
       - Host: orderer3.hijo.com
         Port: 9050
         ClientTLSCert: ../crypto-config/ordererOrganizations/hijo.com/orderers/orderer3.hijo.com/tls/server.crt
-        ServerTlSCert: ../crypto-config/ordererOrganizations/hijo.com/orderers/orderer3.hijo.com/tls/server.crt
-
-BatchTimeout: 2s
-BatchSize:
-  MaxMessageCount: 100
-  AbsolutelyMaxBytes: 99 MB
-  PreferredMaxBytes: 512 KB
-Organizations:
-Policies:
-  Read:             { Type: ImplicitMeta, Rule: "ANY Readers" }
-  Write:            { Type: ImplicitMeta, Rule: "ANY Writers" }
-  Admin:            { Type: ImplicitMeta, Rule: "MAJORITY Admin" }
-  BlockValidation:  { Type: ImplicitMeta, Rule: "ANY Writers" }
+        ServerTLSCert: ../crypto-config/ordererOrganizations/hijo.com/orderers/orderer3.hijo.com/tls/server.crt
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 100
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+  Policies:
+    Readers: { Type: ImplicitMeta, Rule: "ANY Readers" }
+    Writers: { Type: ImplicitMeta, Rule: "ANY Writers" }
+    Admins: { Type: ImplicitMeta, Rule: "MAJORITY Admin" }
+    BlockValidation: { Type: ImplicitMeta, Rule: "ANY Writers" }
 
 Channel: &ChannelDefaults
   Policies:
-    Read:             { Type: ImplicitMeta, Rule: "ANY Readers" }
-    Write:            { Type: ImplicitMeta, Rule: "ANY Writers" }
-    Admin:            { Type: ImplicitMeta, Rule: "MAJORITY Admin" }
+    Readers: { Type: ImplicitMeta, Rule: "ANY Readers" }
+    Writers: { Type: ImplicitMeta, Rule: "ANY Writers" }
+    Admins: { Type: ImplicitMeta, Rule: "MAJORITY Admin" }
   Capabilities:
     <<: *ChannelCapabilities
 
