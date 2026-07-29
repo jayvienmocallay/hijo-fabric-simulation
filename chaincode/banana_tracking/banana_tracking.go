@@ -4,14 +4,16 @@
 package main
 
 import (
-		"encoding/json"
-		"fmt"
+	"encoding/json"
+	"fmt"
+	"os"
 
-		"github.com/hyperledger/fabric-contract-api-go/contractapi"
+	"github.com/hyperledger/fabric-chaincode-go/shim"
+	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
 type BananaBatch struct {
-		BatchID				string	`json:"batchID"`
+		BatchID				string	`json:"batchId"`
 		FarmLocation		string	`json:"farmLocation"`
 		HarvestDate			string	`json:"harvestDate"`
 		WeightKg			float64	`json:"weightKg"`
@@ -19,7 +21,7 @@ type BananaBatch struct {
 		TransportStatus		string	`json:"transportStatus"`
 		TemperatureDegC		float64	`json:"temperatureDegC"`
 		PortCustomsClear	bool	`json:"portCustomsClear"`
-		UpdateByUID			string	`json:"updateByUid"`
+		UpdatedByUID			string	`json:"updatedByUid"`
 }
 
 type SmartContract struct {
@@ -30,18 +32,18 @@ func (s *SmartContract) CreateBatch(ctx contractapi.TransactionContextInterface,
 	batchID string, farmLoc string, harvestDate string, weight float64, uid string) error {
 		exists, err	:= s.BatchExists(ctx, batchID)
 		if err != nil { return err }
-		if exists { return fmt.Error("batch asset %s already exists", batchID) }
+		if exists { return fmt.Errorf("batch asset %s already exists", batchID) }
 
 		batch := BananaBatch{
 				BatchID:			batchID,
-				FarmLocation:		farmLocation,
+				FarmLocation:		farmLoc,
 				HarvestDate:		harvestDate,
 				WeightKg:			weight,
-				CurrentOwner:		"Hijpo Agriculture",
+				CurrentOwner:		"Hijo Agriculture",
 				TransportStatus:	"HARVESTED_AT_FARM",
 				TemperatureDegC:	18.0,
-				PortCustomsClear:	false
-				UpdateByUID:		uid,
+				PortCustomsClear:	false,
+				UpdatedByUID:		uid,
 		}
 
 		batchBytes, err := json.Marshal(batch)
@@ -57,7 +59,7 @@ func (s *SmartContract) UpdateTransportTelemetry(ctx contractapi.TransactionCont
 		batch.TransportStatus	=	status
 		batch.TemperatureDegC	=	temp
 		batch.CurrentOwner		=	newOwner
-		batch.UpdateByUID		=	uid
+		batch.UpdatedByUID		=	uid
 
 		batchBytes, err := json.Marshal(batch)
 		if err != nil { return err }
@@ -71,7 +73,7 @@ func (s *SmartContract) ClearForExport(ctx contractapi.TransactionContextInterfa
 
 	batch.PortCustomsClear	=	true
 	batch.TransportStatus	=	"LOADED_ON_VESSEL"
-	batch.UpdateByUID		=	uid
+	batch.UpdatedByUID		=	uid
 	batchBytes, err := json.Marshal(batch)
 	if err != nil { return err }
 	return ctx.GetStub().PutState(batchID, batchBytes)
@@ -97,12 +99,29 @@ func (s *SmartContract) BatchExists(ctx contractapi.TransactionContextInterface,
 }
 
 func main() {
-		chaincode, err := contractapi.NewChaincode(&SmartContract{})
-		if err != nil {
-				fmt.Printf("Error creating chaincode %s", err)
-				return
+	cc, err := contractapi.NewChaincode(&SmartContract{})
+	if err != nil {
+		fmt.Printf("Error creating chaincode: %s\n", err)
+		return
+	}
+
+	address := os.Getenv("CHAINCODE_SERVER_ADDRESS")
+	if address != "" {
+		ccid := os.Getenv("CHAINCODE_ID")
+		server := &shim.ChaincodeServer{
+			CCID:    ccid,
+			Address: address,
+			CC:      cc,
+			TLSProps: shim.TLSProperties{
+				Disabled: true,
+			},
 		}
-		if err := chaincode.Start(); err != nil {
-				fmt.Printf("Error starting chaincode: %s", err)
+		if err := server.Start(); err != nil {
+			fmt.Printf("Error starting chaincode server: %s\n", err)
 		}
+	} else {
+		if err := cc.Start(); err != nil {
+			fmt.Printf("Error starting chaincode: %s\n", err)
+		}
+	}
 }
