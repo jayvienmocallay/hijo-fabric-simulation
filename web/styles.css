@@ -267,6 +267,8 @@ select, input {
   border-radius: 8px;
   font-family: var(--font-family);
   font-size: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 select:focus, input:focus {
@@ -278,45 +280,125 @@ select:focus, input:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #0f172a;
-  padding: 1.25rem;
-  border-radius: 12px;
+  background: #090d16;
+  padding: 1.5rem;
+  border-radius: 14px;
   border: 1px solid var(--card-border);
   margin: 0.5rem 0;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.4);
 }
 
 .step {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
-  opacity: 0.4;
-  transition: opacity 0.3s;
+  gap: 0.4rem;
+  opacity: 0.35;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 12px;
 }
 
+.step-icon {
+  font-size: 1.6rem;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1e293b;
+  border: 2px solid #334155;
+  color: #64748b;
+  transition: all 0.4s ease;
+}
+
+.step-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all 0.3s ease;
+}
+
+.step-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-family: var(--mono-family);
+}
+
+/* Active Step Lighting Styles */
 .step.active {
   opacity: 1;
 }
 
-.step-icon {
-  font-size: 1.75rem;
+.step.active .step-title {
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
 }
 
-.step-title {
-  font-size: 0.8rem;
-  font-weight: 600;
+.step.active .step-sub {
+  color: #cbd5e1;
 }
 
-.step-sub {
-  font-size: 0.7rem;
-  color: var(--text-muted);
+/* Step 1: Harvest & Pack (Gold/Amber Glow) */
+#step-farm.active .step-icon {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #f59e0b;
+  color: #fbbf24;
+  box-shadow: 0 0 22px rgba(245, 158, 11, 0.7), inset 0 0 12px rgba(245, 158, 11, 0.4);
+  transform: scale(1.12);
+  animation: pulse-glow-gold 2s infinite alternate;
 }
 
+/* Step 2: Refrigerated Transit (Cyan/Ice Blue Glow) */
+#step-logistics.active .step-icon {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: #3b82f6;
+  color: #60a5fa;
+  box-shadow: 0 0 22px rgba(59, 130, 246, 0.7), inset 0 0 12px rgba(59, 130, 246, 0.4);
+  transform: scale(1.12);
+  animation: pulse-glow-blue 2s infinite alternate;
+}
+
+/* Step 3: Port Customs & Export (Emerald Green Glow) */
+#step-port.active .step-icon {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #10b981;
+  color: #34d399;
+  box-shadow: 0 0 22px rgba(16, 185, 129, 0.7), inset 0 0 12px rgba(16, 185, 129, 0.4);
+  transform: scale(1.12);
+  animation: pulse-glow-green 2s infinite alternate;
+}
+
+@keyframes pulse-glow-gold {
+  0% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); }
+  100% { box-shadow: 0 0 26px rgba(245, 158, 11, 0.85); }
+}
+
+@keyframes pulse-glow-blue {
+  0% { box-shadow: 0 0 12px rgba(59, 130, 246, 0.4); }
+  100% { box-shadow: 0 0 26px rgba(59, 130, 246, 0.85); }
+}
+
+@keyframes pulse-glow-green {
+  0% { box-shadow: 0 0 12px rgba(16, 185, 129, 0.4); }
+  100% { box-shadow: 0 0 26px rgba(16, 185, 129, 0.85); }
+}
+
+/* Pipeline Connecting Line */
 .pipeline-line {
   flex: 1;
-  height: 2px;
-  background: var(--card-border);
-  margin: 0 0.5rem;
+  height: 3px;
+  background: #1e293b;
+  margin: 0 0.75rem;
+  border-radius: 4px;
+  transition: all 0.5s ease;
+}
+
+.pipeline-line.active {
+  background: linear-gradient(90deg, #f59e0b, #10b981);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
 }
 
 .json-container {
@@ -582,5 +664,72 @@ pre {
   max-height: 220px;
   overflow-y: auto;
   white-space: pre-wrap;
+}
+
+.audit-history-container {
+  background: #090d16;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.audit-header {
+  background: #1e293b;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--mono-family);
+}
+
+.audit-timeline {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.timeline-card {
+  background: #111827;
+  border: 1px solid var(--card-border);
+  border-left: 3px solid var(--accent-gold);
+  border-radius: 6px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.timeline-card-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-family: var(--mono-family);
+  color: var(--accent-blue);
+}
+
+.timeline-tx {
+  color: var(--text-muted);
+}
+
+.timeline-body {
+  font-size: 0.8rem;
+  color: #e2e8f0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.timeline-tag {
+  background: #1e293b;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-family: var(--mono-family);
 }
 
