@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/hyperledger/fabric-chaincode-go/shim"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
@@ -22,6 +23,13 @@ type BananaBatch struct {
 		TemperatureDegC		float64	`json:"temperatureDegC"`
 		PortCustomsClear	bool	`json:"portCustomsClear"`
 		UpdatedByUID			string	`json:"updatedByUid"`
+}
+
+type HistoryQueryResult struct {
+	TxId      string       `json:"txId"`
+	Value     *BananaBatch `json:"value"`
+	Timestamp string       `json:"timestamp"`
+	IsDelete  bool         `json:"isDelete"`
 }
 
 type SmartContract struct {
@@ -89,6 +97,41 @@ func (s *SmartContract) QueryBatch(ctx contractapi.TransactionContextInterface,
 		err = json.Unmarshal(batchBytes, &batch)
 		if err != nil { return nil, err}
 		return &batch, nil
+}
+
+func (s *SmartContract) GetBatchHistory(ctx contractapi.TransactionContextInterface, batchID string) ([]HistoryQueryResult, error) {
+	resultsIterator, err := ctx.GetStub().GetHistoryForKey(batchID)
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	var records []HistoryQueryResult
+	for resultsIterator.HasNext() {
+		response, err := resultsIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+
+		var batch BananaBatch
+		if len(response.Value) > 0 {
+			err = json.Unmarshal(response.Value, &batch)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		timestamp := time.Unix(response.Timestamp.Seconds, int64(response.Timestamp.Nanos)).Format(time.RFC3339)
+		record := HistoryQueryResult{
+			TxId:      response.TxId,
+			Value:     &batch,
+			Timestamp: timestamp,
+			IsDelete:  response.IsDelete,
+		}
+		records = append(records, record)
+	}
+
+	return records, nil
 }
 
 func (s *SmartContract) BatchExists(ctx contractapi.TransactionContextInterface, 
