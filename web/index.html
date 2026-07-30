@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hijo Resource Corporation - Fabric v2.5 Blockchain Explorer & Monitor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
+
 <body>
   <div class="app-container">
     <!-- Sidebar Header -->
@@ -29,7 +33,7 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-      
+
       <!-- Network Nodes Health Dashboard -->
       <section class="section-card">
         <div class="section-header">
@@ -48,7 +52,8 @@
                   <p>Raft 3-Node Consensus</p>
                 </div>
               </div>
-              <button class="cert-link-btn" onclick="openCertModal('orderer')"><i class="fa-solid fa-certificate"></i> Cert</button>
+              <button class="cert-link-btn" onclick="openCertModal('orderer')"><i class="fa-solid fa-certificate"></i>
+                Cert</button>
             </div>
             <div class="node-ports">
               <span class="tag">orderer1:7050</span>
@@ -68,8 +73,10 @@
                 </div>
               </div>
               <div class="action-links">
-                <button class="cert-link-btn" onclick="openCertModal('agri')"><i class="fa-solid fa-certificate"></i> Cert</button>
-                <a href="http://localhost:5984/_utils" target="_blank" class="couch-link">Fauxton DB <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <button class="cert-link-btn" onclick="openCertModal('agri')"><i class="fa-solid fa-certificate"></i>
+                  Cert</button>
+                <a href="http://localhost:5984/_utils" target="_blank" class="couch-link">Fauxton DB <i
+                    class="fa-solid fa-arrow-up-right-from-square"></i></a>
               </div>
             </div>
             <div class="node-ports">
@@ -89,8 +96,10 @@
                 </div>
               </div>
               <div class="action-links">
-                <button class="cert-link-btn" onclick="openCertModal('logistics')"><i class="fa-solid fa-certificate"></i> Cert</button>
-                <a href="http://localhost:5985/_utils" target="_blank" class="couch-link">Fauxton DB <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <button class="cert-link-btn" onclick="openCertModal('logistics')"><i
+                    class="fa-solid fa-certificate"></i> Cert</button>
+                <a href="http://localhost:5985/_utils" target="_blank" class="couch-link">Fauxton DB <i
+                    class="fa-solid fa-arrow-up-right-from-square"></i></a>
               </div>
             </div>
             <div class="node-ports">
@@ -110,8 +119,10 @@
                 </div>
               </div>
               <div class="action-links">
-                <button class="cert-link-btn" onclick="openCertModal('port')"><i class="fa-solid fa-certificate"></i> Cert</button>
-                <a href="http://localhost:5986/_utils" target="_blank" class="couch-link">Fauxton DB <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                <button class="cert-link-btn" onclick="openCertModal('port')"><i class="fa-solid fa-certificate"></i>
+                  Cert</button>
+                <a href="http://localhost:5986/_utils" target="_blank" class="couch-link">Fauxton DB <i
+                    class="fa-solid fa-arrow-up-right-from-square"></i></a>
               </div>
             </div>
             <div class="node-ports">
@@ -142,12 +153,19 @@
 
       <!-- Live Supply Chain Batch Tracking Section -->
       <div class="two-column-layout">
-        
+
         <!-- Batch State Inspector -->
         <section class="section-card flex-1">
           <div class="section-header">
             <h2><i class="fa-solid fa-box-archive"></i> Live Banana Batch Inspector</h2>
-            <button class="btn btn-secondary" onclick="loadSampleData()"><i class="fa-solid fa-arrows-rotate"></i> Refresh State</button>
+            <button class="btn btn-secondary" onclick="loadSampleData()"><i class="fa-solid fa-arrows-rotate"></i>
+              Refresh State</button>
+          </div>
+
+          <!-- Live Success Alert Banner -->
+          <div id="txSuccessBanner" style="display:none; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem; align-items: center; justify-content: space-between; transition: all 0.4s ease;">
+            <span><i class="fa-solid fa-circle-check" style="font-size:1.1rem; margin-right:0.5rem;"></i> <span id="txSuccessMsg">Transaction Successfully Endorsed & Committed to Fabric Block Ledger!</span></span>
+            <span style="font-size:0.75rem; opacity:0.8; font-family:var(--mono-family);" id="txSuccessTxId"></span>
           </div>
 
           <div class="batch-selector">
@@ -156,6 +174,7 @@
               <option value="BATCH101">BATCH101 - Tagum Farm 4 (Cold Storage)</option>
               <option value="BATCH102">BATCH102 - Davao Farm 2 (Harvested)</option>
               <option value="BATCH103">BATCH103 - Carmen Plantation (Vessel Loaded)</option>
+              <option value="BATCH106">BATCH106 (Newly Committed)</option>
             </select>
           </div>
 
@@ -166,13 +185,13 @@
               <div class="step-title">Harvest & Pack</div>
               <div class="step-sub" id="sub-farm">Tagum Farm</div>
             </div>
-            <div class="pipeline-line"></div>
+            <div class="pipeline-line" id="line-farm-logistics"></div>
             <div class="step" id="step-logistics">
               <div class="step-icon"><i class="fa-solid fa-snowflake"></i></div>
               <div class="step-title">Refrigerated Transit</div>
               <div class="step-sub" id="sub-logistics">Cold Truck</div>
             </div>
-            <div class="pipeline-line"></div>
+            <div class="pipeline-line" id="line-logistics-port"></div>
             <div class="step" id="step-port">
               <div class="step-icon"><i class="fa-solid fa-ship"></i></div>
               <div class="step-title">Port Customs & Export</div>
@@ -187,6 +206,17 @@
               <span class="badge badge-info" id="currentTxStatus">VALIDATED & COMMITTED</span>
             </div>
             <pre id="jsonViewer"><code>Loading asset state...</code></pre>
+          </div>
+
+          <!-- Provenance Audit Log Timeline -->
+          <div class="audit-history-container">
+            <div class="audit-header">
+              <span><i class="fa-solid fa-timeline"></i> IMMUTABLE PROVENANCE AUDIT LOG (Block Ledger)</span>
+              <span class="badge badge-success" id="historyCount">0 Revisions</span>
+            </div>
+            <div class="audit-timeline" id="auditTimeline">
+              <!-- Dynamically populated by JS -->
+            </div>
           </div>
         </section>
 
@@ -206,21 +236,73 @@
               </select>
             </div>
 
+            <!-- Batch ID Field: Text Input for CreateBatch (Auto-Incremented & Read-Only) -->
+            <div class="form-group" id="groupNewBatchId">
+              <label for="inputNewBatchId">New Batch UID:</label>
+              <input type="text" id="inputNewBatchId" value="BATCH101" readonly
+                style="background:#131d31; color:#38bdf8; font-weight:600; cursor:not-allowed; border:1px solid #334155;"
+                title="Auto-incremented by Blockchain Network">
+            </div>
+
+            <!-- Batch ID Field: Dropdown Selector for Telemetry & ClearForExport -->
+            <div class="form-group" id="groupExistingBatchId" style="display:none;">
+              <label for="inputExistingBatchSelect">Target Batch UID:</label>
+              <select id="inputExistingBatchSelect"></select>
+            </div>
+
+            <!-- CreateBatch Fields -->
+            <div id="fieldsCreateBatch">
+              <div class="form-group">
+                <label for="paramFarm">Farm Location:</label>
+                <input type="text" id="paramFarm" value="Tagum Farm Sector 5" required>
+              </div>
+              <div class="form-group">
+                <label for="paramDate">Harvest Date:</label>
+                <input type="date" id="paramDate" value="2026-07-30" required>
+              </div>
+              <div class="form-group">
+                <label for="paramWeight">Weight (Kg):</label>
+                <input type="number" step="0.1" id="paramWeight" value="1850.0" required>
+              </div>
+            </div>
+
+            <!-- UpdateTransportTelemetry Fields -->
+            <div id="fieldsTelemetry" style="display:none;">
+              <div class="form-group">
+                <label for="paramStatus">Transport Status:</label>
+                <select id="paramStatus">
+                  <option value="IN_TRANSIT_COLD_STORAGE">IN_TRANSIT_COLD_STORAGE</option>
+                  <option value="ARRIVED_AT_PORT">ARRIVED_AT_PORT</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="paramTemp">Temperature (°C):</label>
+                <input type="number" step="0.1" id="paramTemp" value="13.2" required>
+              </div>
+              <div class="form-group">
+                <label for="paramOwner">New Custody Owner:</label>
+                <input type="text" id="paramOwner" value="Hijo Logistics Division" required>
+              </div>
+            </div>
+
+            <!-- ClearForExport Fields -->
+            <div id="fieldsExport" style="display:none;">
+              <div class="form-group">
+                <label for="paramCustoms">Customs Inspection Status:</label>
+                <input type="text" id="paramCustoms" value="PASSED_CUSTOMS_CLEARANCE" readonly>
+              </div>
+            </div>
+
+            <!-- Signing Operator UID Dropdown -->
             <div class="form-group">
-              <label for="inputBatchId">Batch UID:</label>
-              <input type="text" id="inputBatchId" value="BATCH104" required>
+              <label for="inputUidSelect">Signing Operator UID:</label>
+              <select id="inputUidSelect">
+                <!-- Dynamically populated by JS based on selected Org -->
+              </select>
             </div>
 
-            <div id="dynamicFields">
-              <!-- Dynamically populated by JS -->
-            </div>
-
-            <div class="form-group">
-              <label for="inputUid">Signing Operator UID:</label>
-              <input type="text" id="inputUid" value="EMP-AGRI-001" required>
-            </div>
-
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Submit Endorsement to Fabric</button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Submit Endorsement to
+              Fabric</button>
           </form>
 
           <div class="console-box" id="consoleBox">
@@ -249,7 +331,8 @@
               <option value="chaincode.banana.tracking">chaincode.banana.tracking (CCAAS Server)</option>
               <option value="couchdb.agri">couchdb.agri (Agri State DB)</option>
             </select>
-            <button class="btn btn-secondary" id="autoRefreshBtn" onclick="toggleAutoRefresh()"><i class="fa-solid fa-sync"></i> Auto Refresh: ON</button>
+            <button class="btn btn-secondary" id="autoRefreshBtn" onclick="toggleAutoRefresh()"><i
+                class="fa-solid fa-sync"></i> Auto Refresh: ON</button>
           </div>
         </div>
 
@@ -291,6 +374,7 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=3"></script>
 </body>
+
 </html>
