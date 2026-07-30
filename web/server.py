@@ -29,6 +29,12 @@ class LogServerHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=os.path.dirname(__file__), **kwargs)
 
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == "/api/logs":
@@ -126,6 +132,58 @@ class LogServerHandler(SimpleHTTPRequestHandler):
                     self.wfile.write(json.dumps({"status": "SUCCESS", "data": payload}).encode())
                 else:
                     self.wfile.write(json.dumps({"status": "ERROR", "output": res.stdout}).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "ERROR", "error": str(e)}).encode())
+
+        elif parsed.path == "/api/history":
+            params = parse_qs(parsed.query)
+            batch_id = params.get("batchId", ["BATCH101"])[0]
+            cwd = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+            env = os.environ.copy()
+            env["CORE_PEER_TLS_ENABLED"] = "true"
+            env["CORE_PEER_LOCALMSPID"] = "HijoAgriMSP"
+            env["CORE_PEER_TLS_ROOTCERT_FILE"] = f"{cwd}/crypto-config/peerOrganizations/agri.hijo.com/peers/peer0.agri.hijo.com/tls/ca.crt"
+            env["CORE_PEER_MSPCONFIGPATH"] = f"{cwd}/crypto-config/peerOrganizations/agri.hijo.com/users/Admin@agri.hijo.com/msp"
+            env["CORE_PEER_ADDRESS"] = "localhost:7051"
+
+            args_json = json.dumps({"Args": ["GetBatchHistory", batch_id]})
+            cmd = ["peer", "chaincode", "query", "-C", "hijosupplychain", "-n", "banana_tracking", "-c", args_json]
+
+            try:
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=cwd, env=env)
+                self.send_response(200 if res.returncode == 0 else 400)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                if res.returncode == 0:
+                    payload = json.loads(res.stdout)
+                    self.wfile.write(json.dumps({"status": "SUCCESS", "history": payload}).encode())
+                else:
+                    self.wfile.write(json.dumps({"status": "ERROR", "output": res.stdout}).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "ERROR", "error": str(e)}).encode())
+
+        elif parsed.path == "/api/batches":
+            try:
+                cmd = ["curl", "-s", "http://admin:adminpw@localhost:5984/hijosupplychain_banana_tracking/_all_docs?include_docs=true"]
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=5)
+                data = json.loads(res.stdout)
+                docs = []
+                if "rows" in data:
+                    for row in data["rows"]:
+                        if "doc" in row and not row["id"].startswith("_design") and not row["id"].startswith("~"):
+                            docs.append(row["doc"])
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "SUCCESS", "batches": docs}).encode())
             except Exception as e:
                 self.send_response(500)
                 self.send_header("Content-Type", "application/json")
