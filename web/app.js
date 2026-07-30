@@ -31,57 +31,294 @@ const SAMPLE_BATCHES = {
     "temperatureDegC": 12.0,
     "portCustomsClear": true,
     "updatedByUid": "EMP-PORT-003"
+  },
+  "BATCH106": {
+    "batchId": "BATCH106",
+    "farmLocation": "Tagum Plantation Sector 5",
+    "harvestDate": "2026-07-30",
+    "weightKg": 1850.0,
+    "currentOwner": "Hijo Agriculture",
+    "transportStatus": "HARVESTED_AT_FARM",
+    "temperatureDegC": 18.0,
+    "portCustomsClear": false,
+    "updatedByUid": "EMP-AGRI-001"
   }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
   updateFormFields();
-  renderSelectedBatch();
+  loadActiveBatches();
+  fetchLiveLogs();
+  startLogPolling();
 });
 
+function handleBatchIdSelectChange() {
+  const inputSelect = document.getElementById("inputBatchSelect");
+  const newGroup = document.getElementById("newBatchGroup");
+  const actionSelect = document.getElementById("txAction");
+  if (!inputSelect || !newGroup) return;
+
+  const action = actionSelect ? actionSelect.value : "CreateBatch";
+  if (action === "CreateBatch" && inputSelect.value === "__NEW__") {
+    newGroup.style.display = "block";
+  } else {
+    newGroup.style.display = "none";
+  }
+}
+
+function calculateNextBatchId(batches) {
+  if (!Array.isArray(batches) || batches.length === 0) {
+    return "BATCH101";
+  }
+
+  let maxNum = 100;
+  batches.forEach(b => {
+    if (b && b.batchId) {
+      const match = b.batchId.match(/(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    }
+  });
+
+  return "BATCH" + (maxNum + 1);
+}
+
+async function loadActiveBatches(selectedIdToKeep = null) {
+  const select = document.getElementById("batchSelect");
+  const existSelect = document.getElementById("inputExistingBatchSelect");
+  const newIdInput = document.getElementById("inputNewBatchId");
+  if (!select) return;
+
+  try {
+    const res = await fetch("/api/batches");
+    const result = await res.json();
+    if (result.status === "SUCCESS" && Array.isArray(result.batches)) {
+      select.innerHTML = "";
+      if (existSelect) {
+        existSelect.innerHTML = "";
+      }
+
+      // Auto-increment New Batch UID
+      const nextId = calculateNextBatchId(result.batches);
+      if (newIdInput) {
+        newIdInput.value = nextId;
+      }
+
+      if (result.batches.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "-- Fresh Ledger (Create a new batch below) --";
+        select.appendChild(opt);
+
+        if (existSelect) {
+          const optE = document.createElement("option");
+          optE.value = "BATCH101";
+          optE.textContent = "BATCH101 (Sample)";
+          existSelect.appendChild(optE);
+        }
+
+        document.getElementById("jsonViewer").textContent = JSON.stringify({ message: "Ledger is fresh and empty. Use the Blockchain Transaction Simulator form to create a new batch!" }, null, 2);
+        document.getElementById("auditTimeline").innerHTML = "<div class='timeline-card'><div class='timeline-card-header'><span>FRESH LEDGER STATE</span></div><div class='timeline-body'><span class='timeline-tag'>Zero blocks committed yet</span></div></div>";
+        document.getElementById("historyCount").textContent = "0 Revisions";
+        updatePipelineUI(null);
+        return;
+      }
+
+      result.batches.forEach(b => {
+        const opt = document.createElement("option");
+        opt.value = b.batchId;
+        opt.textContent = `${b.batchId} - ${b.farmLocation || ''} (${b.transportStatus || 'ACTIVE'})`;
+        select.appendChild(opt);
+
+        if (existSelect) {
+          const inOpt = document.createElement("option");
+          inOpt.value = b.batchId;
+          inOpt.textContent = `${b.batchId} - ${b.farmLocation || ''} (${b.transportStatus || 'ACTIVE'})`;
+          existSelect.appendChild(inOpt);
+        }
+      });
+
+      if (selectedIdToKeep) {
+        select.value = selectedIdToKeep;
+        if (existSelect && Array.from(existSelect.options).some(o => o.value === selectedIdToKeep)) {
+          existSelect.value = selectedIdToKeep;
+        }
+      }
+      renderSelectedBatch();
+      return;
+    }
+  } catch (err) {
+    console.warn("Failed to load active batches:", err);
+  }
+  renderSelectedBatch();
+}
+
+function updatePipelineUI(batchData) {
+  const farmStep = document.getElementById("step-farm");
+  const logisticsStep = document.getElementById("step-logistics");
+  const portStep = document.getElementById("step-port");
+  const line1 = document.getElementById("line-farm-logistics");
+  const line2 = document.getElementById("line-logistics-port");
+
+  if (!farmStep || !logisticsStep || !portStep) return;
+
+  farmStep.classList.remove("active");
+  logisticsStep.classList.remove("active");
+  portStep.classList.remove("active");
+  if (line1) line1.classList.remove("active");
+  if (line2) line2.classList.remove("active");
+
+  if (!batchData) return;
+
+  const status = String(batchData.transportStatus || "").toUpperCase();
+  const customsClear = Boolean(batchData.portCustomsClear);
+
+  if (status.includes("VESSEL") || status.includes("EXPORT") || customsClear) {
+    farmStep.classList.add("active");
+    if (line1) line1.classList.add("active");
+    logisticsStep.classList.add("active");
+    if (line2) line2.classList.add("active");
+    portStep.classList.add("active");
+  } else if (status.includes("TRANSIT") || status.includes("COLD") || status.includes("ARRIVED") || status.includes("LOGISTICS")) {
+    farmStep.classList.add("active");
+    if (line1) line1.classList.add("active");
+    logisticsStep.classList.add("active");
+  } else {
+    // HARVESTED_AT_FARM or default active stage 1 (Farm step lights up!)
+    farmStep.classList.add("active");
+  }
+}
+
 async function renderSelectedBatch() {
-  const batchId = document.getElementById("batchSelect").value;
+  const batchSelect = document.getElementById("batchSelect");
+  if (!batchSelect) return;
+  const batchId = batchSelect.value;
+  let batchData = null;
+
   try {
     const res = await fetch(`/api/query?batchId=${encodeURIComponent(batchId)}`);
     const result = await res.json();
-    if (result.status === "SUCCESS") {
-      const batchData = result.data;
-      document.getElementById("jsonViewer").textContent = JSON.stringify(batchData, null, 2);
-
-      const farmStep = document.getElementById("step-farm");
-      const logisticsStep = document.getElementById("step-logistics");
-      const portStep = document.getElementById("step-port");
-
-      farmStep.classList.remove("active");
-      logisticsStep.classList.remove("active");
-      portStep.classList.remove("active");
-
-      if (batchData.transportStatus === "HARVESTED_AT_FARM") {
-        farmStep.classList.add("active");
-      } else if (batchData.transportStatus.includes("TRANSIT") || batchData.transportStatus.includes("COLD")) {
-        farmStep.classList.add("active");
-        logisticsStep.classList.add("active");
-      } else if (batchData.transportStatus === "LOADED_ON_VESSEL" || batchData.portCustomsClear) {
-        farmStep.classList.add("active");
-        logisticsStep.classList.add("active");
-        portStep.classList.add("active");
-      }
-      return;
+    if (result.status === "SUCCESS" && result.data) {
+      batchData = result.data;
     }
   } catch (e) {
     console.warn("Live query fallback to sample data:", e);
   }
 
-  const batchData = SAMPLE_BATCHES[batchId] || SAMPLE_BATCHES["BATCH101"];
+  if (!batchData) {
+    batchData = SAMPLE_BATCHES[batchId] || SAMPLE_BATCHES["BATCH101"];
+  }
+
   document.getElementById("jsonViewer").textContent = JSON.stringify(batchData, null, 2);
+  updatePipelineUI(batchData);
+  fetchBatchHistory(batchId);
+}
+
+async function fetchBatchHistory(batchId) {
+  const timelineDiv = document.getElementById("auditTimeline");
+  const countBadge = document.getElementById("historyCount");
+  if (!timelineDiv) return;
+
+  try {
+    const res = await fetch(`/api/history?batchId=${encodeURIComponent(batchId)}`);
+    const result = await res.json();
+
+    if (result.status === "SUCCESS" && Array.isArray(result.history) && result.history.length > 0) {
+      const history = result.history;
+      countBadge.textContent = `${history.length} Blockchain Revisions`;
+
+      timelineDiv.innerHTML = history.map((record, index) => {
+        const val = record.value || {};
+        const formattedDate = record.timestamp ? new Date(record.timestamp).toLocaleString() : "Tx Timestamp";
+        const shortTx = record.txId ? record.txId.substring(0, 16) + "..." : "TxID";
+
+        return `
+          <div class="timeline-card">
+            <div class="timeline-card-header">
+              <span><strong>Rev #${index + 1}</strong> — ${val.transportStatus || 'CREATED'}</span>
+              <span class="timeline-tx" title="${record.txId}">TxID: ${shortTx}</span>
+            </div>
+            <div class="timeline-body">
+              <span class="timeline-tag"><i class="fa-solid fa-clock"></i> ${formattedDate}</span>
+              <span class="timeline-tag"><i class="fa-solid fa-user"></i> ${val.updatedByUid || 'SYSTEM'}</span>
+              <span class="timeline-tag"><i class="fa-solid fa-temperature-half"></i> ${val.temperatureDegC !== undefined ? val.temperatureDegC + ' °C' : 'N/A'}</span>
+              <span class="timeline-tag"><i class="fa-solid fa-building"></i> ${val.currentOwner || 'N/A'}</span>
+            </div>
+          </div>
+        `;
+      }).reverse().join("");
+      return;
+    }
+  } catch (err) {
+    console.warn("History fetch fallback:", err);
+  }
+
+  countBadge.textContent = "1 Initial Revision";
+  timelineDiv.innerHTML = `
+    <div class="timeline-card">
+      <div class="timeline-card-header">
+        <span><strong>Rev #1</strong> — INITIAL CREATION</span>
+        <span class="timeline-tx">Genesis Ledger State</span>
+      </div>
+      <div class="timeline-body">
+        <span class="timeline-tag"><i class="fa-solid fa-clock"></i> Live Ledger Block</span>
+        <span class="timeline-tag"><i class="fa-solid fa-user"></i> EMP-AGRI-001</span>
+      </div>
+    </div>
+  `;
+}
+
+function showSuccessBanner(msg, txId = "") {
+  const banner = document.getElementById("txSuccessBanner");
+  const msgEl = document.getElementById("txSuccessMsg");
+  const txEl = document.getElementById("txSuccessTxId");
+  if (!banner) return;
+
+  msgEl.textContent = msg;
+  txEl.textContent = txId ? `TxID: ${txId.substring(0, 16)}...` : "";
+  banner.style.display = "flex";
+
+  const inspector = document.getElementById("batchSelect");
+  if (inspector) {
+    inspector.style.borderColor = "#10b981";
+    inspector.style.boxShadow = "0 0 15px rgba(16, 185, 129, 0.5)";
+    setTimeout(() => {
+      inspector.style.borderColor = "";
+      inspector.style.boxShadow = "";
+    }, 2500);
+  }
+
+  setTimeout(() => {
+    banner.style.display = "none";
+  }, 6000);
 }
 
 async function handleTransaction(event) {
   event.preventDefault();
   const action = document.getElementById("txAction").value;
-  const batchId = document.getElementById("inputBatchId").value;
-  const uid = document.getElementById("inputUid").value;
+  
+  let batchId = "";
+  if (action === "CreateBatch") {
+    const inputNew = document.getElementById("inputNewBatchId");
+    batchId = (inputNew && inputNew.value.trim()) ? inputNew.value.trim() : "BATCH101";
+  } else {
+    const inputExist = document.getElementById("inputExistingBatchSelect");
+    batchId = (inputExist && inputExist.value) ? inputExist.value : "BATCH101";
+  }
+
+  const uidSelect = document.getElementById("inputUidSelect");
+  const uid = uidSelect ? uidSelect.value : "EMP-AGRI-001";
   const timestamp = new Date().toLocaleTimeString();
+
+  const submitBtn = event.target.querySelector("button[type='submit']");
+  const originalBtnContent = submitBtn ? submitBtn.innerHTML : "";
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Submitting Endorsement to Fabric...`;
+  }
 
   let args = [];
   if (action === "CreateBatch") {
@@ -104,7 +341,7 @@ async function handleTransaction(event) {
     args = [batchId, uid];
   }
 
-  logConsole(`[${timestamp}] 🚀 Submitting live endorsement to Fabric for '${action}' (${batchId})...`);
+  logConsole(`[${timestamp}] 🚀 Submitting transaction for '${action}' (${batchId})...`);
 
   try {
     const response = await fetch("/api/invoke", {
@@ -117,138 +354,96 @@ async function handleTransaction(event) {
     if (result.status === "SUCCESS") {
       logConsole(`[${timestamp}] ⚡ Endorsed by AgriMSP, LogisticsMSP, PortMSP! status:200`);
       logConsole(`[${timestamp}] 📦 Committed to World State (CouchDB).`);
+      
+      showSuccessBanner(`Batch ${batchId} successfully endorsed & committed to Block Ledger!`);
 
-      const select = document.getElementById("batchSelect");
-      let exists = Array.from(select.options).some(opt => opt.value === batchId);
-      if (!exists) {
-        const opt = document.createElement("option");
-        opt.value = batchId;
-        opt.textContent = `${batchId} (Live Ledger)`;
-        select.appendChild(opt);
+      // 1. Immediately force DOM dropdown update so user sees it with 0ms delay
+      const mainSelect = document.getElementById("batchSelect");
+      if (mainSelect) {
+        let optFound = Array.from(mainSelect.options).find(o => o.value === batchId);
+        if (!optFound) {
+          optFound = document.createElement("option");
+          optFound.value = batchId;
+          optFound.textContent = `${batchId} (Newly Committed)`;
+          mainSelect.appendChild(optFound);
+        }
+        mainSelect.value = batchId;
       }
-      select.value = batchId;
-      setTimeout(renderSelectedBatch, 800);
+      renderSelectedBatch();
+
+      // 2. Fetch full updated batch list and auto-increment next batch ID
+      await loadActiveBatches(batchId);
+      setTimeout(() => loadActiveBatches(batchId), 600);
+      setTimeout(() => loadActiveBatches(batchId), 1500);
     } else {
       logConsole(`[${timestamp}] ❌ Endorsement Failed: ${result.output || "Unknown error"}`);
     }
   } catch (err) {
-    logConsole(`[${timestamp}] ❌ Transaction error: ${err.message}`);
+    logConsole(`[${timestamp}] ℹ️ Transaction error: ${err.message}`);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnContent;
+    }
   }
 }
 
 function updateFormFields() {
-  const action = document.getElementById("txAction").value;
-  const dynamicDiv = document.getElementById("dynamicFields");
+  const actionEl = document.getElementById("txAction");
+  if (!actionEl) return;
+  const action = actionEl.value;
+
+  const gNew = document.getElementById("groupNewBatchId");
+  const gExist = document.getElementById("groupExistingBatchId");
+  const fCreate = document.getElementById("fieldsCreateBatch");
+  const fTelem = document.getElementById("fieldsTelemetry");
+  const fExport = document.getElementById("fieldsExport");
+  const uidSel = document.getElementById("inputUidSelect");
+
+  if (!gNew || !gExist || !fCreate || !fTelem || !fExport) return;
 
   if (action === "CreateBatch") {
-    dynamicDiv.innerHTML = `
-      <div class="form-group">
-        <label>Farm Location:</label>
-        <input type="text" id="paramFarm" value="Tagum Farm Sector 5" required>
-      </div>
-      <div class="form-group">
-        <label>Harvest Date:</label>
-        <input type="date" id="paramDate" value="2026-07-29" required>
-      </div>
-      <div class="form-group">
-        <label>Weight (Kg):</label>
-        <input type="number" step="0.1" id="paramWeight" value="1850.0" required>
-      </div>
-    `;
-    document.getElementById("inputUid").value = "EMP-AGRI-001";
+    gNew.style.display = "block";
+    gExist.style.display = "none";
+    fCreate.style.display = "block";
+    fTelem.style.display = "none";
+    fExport.style.display = "none";
+
+    if (uidSel) {
+      uidSel.innerHTML = `
+        <option value="EMP-AGRI-001">EMP-AGRI-001 (Farm Supervisor)</option>
+        <option value="EMP-AGRI-002">EMP-AGRI-002 (Harvest Inspector)</option>
+        <option value="EMP-AGRI-007">EMP-AGRI-007 (Rogue Insider Simulation)</option>
+      `;
+    }
   } else if (action === "UpdateTransportTelemetry") {
-    dynamicDiv.innerHTML = `
-      <div class="form-group">
-        <label>Transport Status:</label>
-        <select id="paramStatus">
-          <option value="IN_TRANSIT_COLD_STORAGE">IN_TRANSIT_COLD_STORAGE</option>
-          <option value="ARRIVED_AT_PORT">ARRIVED_AT_PORT</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Temperature (°C):</label>
-        <input type="number" step="0.1" id="paramTemp" value="13.2" required>
-      </div>
-      <div class="form-group">
-        <label>New Custody Owner:</label>
-        <input type="text" id="paramOwner" value="Hijo Logistics Division" required>
-      </div>
-    `;
-    document.getElementById("inputUid").value = "EMP-LOG-002";
+    gNew.style.display = "none";
+    gExist.style.display = "block";
+    fCreate.style.display = "none";
+    fTelem.style.display = "block";
+    fExport.style.display = "none";
+
+    if (uidSel) {
+      uidSel.innerHTML = `
+        <option value="EMP-LOG-002">EMP-LOG-002 (Cold Truck Driver)</option>
+        <option value="EMP-LOG-005">EMP-LOG-005 (Warehouse Manager)</option>
+      `;
+    }
   } else if (action === "ClearForExport") {
-    dynamicDiv.innerHTML = `
-      <div class="form-group">
-        <label>Customs Inspection Status:</label>
-        <input type="text" id="paramCustoms" value="PASSED_CUSTOMS_CLEARANCE" readonly>
-      </div>
-    `;
-    document.getElementById("inputUid").value = "EMP-PORT-003";
+    gNew.style.display = "none";
+    gExist.style.display = "block";
+    fCreate.style.display = "none";
+    fTelem.style.display = "none";
+    fExport.style.display = "block";
+
+    if (uidSel) {
+      uidSel.innerHTML = `
+        <option value="EMP-PORT-003">EMP-PORT-003 (Customs Officer)</option>
+        <option value="EMP-PORT-009">EMP-PORT-009 (Berth Inspector)</option>
+      `;
+    }
   }
 }
-
-function handleTransaction(event) {
-  event.preventDefault();
-  const action = document.getElementById("txAction").value;
-  const batchId = document.getElementById("inputBatchId").value;
-  const uid = document.getElementById("inputUid").value;
-  const consoleOutput = document.getElementById("consoleOutput");
-
-  const timestamp = new Date().toLocaleTimeString();
-  const txId = "0x" + Math.random().toString(16).substr(2, 8) + Math.random().toString(16).substr(2, 8);
-
-  logConsole(`[${timestamp}] Submitting '${action}' for ${batchId}...`);
-
-  setTimeout(() => {
-    logConsole(`[${timestamp}] ⚡ Endorsed by AgriMSP, LogisticsMSP, PortMSP.`);
-    logConsole(`[${timestamp}] 📦 Block committed via Raft Orderer. TxID: ${txId}`);
-
-    // Update in-memory state
-    if (action === "CreateBatch") {
-      SAMPLE_BATCHES[batchId] = {
-        batchId: batchId,
-        farmLocation: document.getElementById("paramFarm").value,
-        harvestDate: document.getElementById("paramDate").value,
-        weightKg: parseFloat(document.getElementById("paramWeight").value),
-        currentOwner: "Hijo Agriculture",
-        transportStatus: "HARVESTED_AT_FARM",
-        temperatureDegC: 18.0,
-        portCustomsClear: false,
-        updatedByUid: uid
-      };
-    } else if (action === "UpdateTransportTelemetry") {
-      if (!SAMPLE_BATCHES[batchId]) SAMPLE_BATCHES[batchId] = { ...SAMPLE_BATCHES["BATCH101"], batchId };
-      SAMPLE_BATCHES[batchId].transportStatus = document.getElementById("paramStatus").value;
-      SAMPLE_BATCHES[batchId].temperatureDegC = parseFloat(document.getElementById("paramTemp").value);
-      SAMPLE_BATCHES[batchId].currentOwner = document.getElementById("paramOwner").value;
-      SAMPLE_BATCHES[batchId].updatedByUid = uid;
-    } else if (action === "ClearForExport") {
-      if (!SAMPLE_BATCHES[batchId]) SAMPLE_BATCHES[batchId] = { ...SAMPLE_BATCHES["BATCH101"], batchId };
-      SAMPLE_BATCHES[batchId].portCustomsClear = true;
-      SAMPLE_BATCHES[batchId].transportStatus = "LOADED_ON_VESSEL";
-      SAMPLE_BATCHES[batchId].updatedByUid = uid;
-    }
-
-    // Refresh Selector & View
-    const select = document.getElementById("batchSelect");
-    let exists = Array.from(select.options).some(opt => opt.value === batchId);
-    if (!exists) {
-      const opt = document.createElement("option");
-      opt.value = batchId;
-      opt.textContent = `${batchId} (Newly Committed)`;
-      select.appendChild(opt);
-    }
-    select.value = batchId;
-    renderSelectedBatch();
-
-  }, 600);
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  updateFormFields();
-  renderSelectedBatch();
-  fetchLiveLogs();
-  startLogPolling();
-});
 
 let autoRefreshEnabled = true;
 let logPollTimer = null;
@@ -304,6 +499,7 @@ async function fetchLiveLogs() {
 
 function logConsole(msg) {
   const consoleOutput = document.getElementById("consoleOutput");
+  if (!consoleOutput) return;
   consoleOutput.innerHTML += `<br>${msg}`;
   consoleOutput.scrollTop = consoleOutput.scrollHeight;
 }
