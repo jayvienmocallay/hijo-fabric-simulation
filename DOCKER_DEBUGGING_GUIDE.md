@@ -24,14 +24,58 @@ docker exec -it peer0.agri.hijo.com bash
 peer channel list
 
 # Fetch the oldest block of the channel
-peer channel fetch oldest genesis.block -c hijosupplychain -o orderer1.hijo.com:7050
+peer channel fetch oldest genesis.block -c hijosupplychain
 
-# Query the installed chaincodes
+
+```
+
+### How to Verify All Organizations Are on the Same Network
+While `peer channel list` tells you that a peer joined a channel, it doesn't prove they are synchronized. To definitively prove that all organizations (Agri, Logistics, Port) are connected and sharing the same ledger, you must compare their blockchain height and hash.
+
+Run this locally (outside the docker container):
+```bash
+# Point to your fabric installation config
+export FABRIC_CFG_PATH=/home/jeb/fabric-samples/config
+
+# Check Agri Peer
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="HijoAgriMSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/crypto-config/peerOrganizations/agri.hijo.com/peers/peer0.agri.hijo.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/crypto-config/peerOrganizations/agri.hijo.com/users/Admin@agri.hijo.com/msp
+export CORE_PEER_ADDRESS=localhost:7051
+peer channel getinfo -c hijosupplychain
+
+# Check Logistics Peer (Swap Address and MSP)
+export CORE_PEER_LOCALMSPID="HijoLogisticsMSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/crypto-config/peerOrganizations/logistics.hijo.com/peers/peer0.logistics.hijo.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/crypto-config/peerOrganizations/logistics.hijo.com/users/Admin@logistics.hijo.com/msp
+export CORE_PEER_ADDRESS=localhost:8051
+peer channel getinfo -c hijosupplychain
+```
+*If all peers return the exact same `height` and `currentBlockHash`, they are successfully connected to the same network.*
+
+### How to Run Admin Commands (e.g., queryinstalled)
+If you try to run `peer lifecycle chaincode queryinstalled` from inside the `peer0.agri.hijo.com` container, you will get an error: `Failed to authorize invocation due to failed ACL check`. 
+
+This happens because you are logged in using the **Peer's** identity, not the **Admin's** identity. The peer container does not have the Admin certificates inside it.
+
+To fix this and successfully query chaincodes, you must run the command from your **host machine**, where all the certificates in `crypto-config` are accessible:
+
+```bash
+# Point to your fabric installation config
+export FABRIC_CFG_PATH=/home/jeb/fabric-samples/config
+
+# Tell the terminal to act as the Agri Admin
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="HijoAgriMSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/crypto-config/peerOrganizations/agri.hijo.com/peers/peer0.agri.hijo.com/tls/ca.crt
+export CORE_PEER_MSPCONFIGPATH=${PWD}/crypto-config/peerOrganizations/agri.hijo.com/users/Admin@agri.hijo.com/msp
+export CORE_PEER_ADDRESS=localhost:7051
+
+# Now query the installed chaincodes successfully
 peer lifecycle chaincode queryinstalled
 ```
 
-### Common Error: `Failed to authorize invocation due to failed ACL check`
-If you get a 500 status error stating `The identity is not an admin under this MSP`, it means you are acting as a **Peer** instead of an **Admin**. Some commands (like `queryinstalled`) require Admin privileges. 
 
 To fix this, you must copy the Admin certificates into the container and tell the CLI to use them:
 
